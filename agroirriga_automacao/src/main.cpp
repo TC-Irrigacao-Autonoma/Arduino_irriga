@@ -5,8 +5,8 @@
 #include <Ethernet.h> 
 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-byte servidor[] = {10, 0, 10, 216};
-//char servidor[] = "nomedoservidor.com.br";
+//byte servidor[] = {10, 0, 10, 216};
+char servidor[] = "https://agroirriga.gaviaopeixoto.sp.gov.br";
 #define portaHTTP 80
 
 EthernetClient clienteArduino;
@@ -117,7 +117,7 @@ void loop() {
       clienteArduino.print(vazaoAgua);
       clienteArduino.println("HTTP/1.0");
       
-      clienteArduino.println("Host: 10.0.10.216");
+      clienteArduino.println("Host: https://agroirriga.gaviaopeixoto.sp.gov.br/");
       clienteArduino.println("Connection: close");
       clienteArduino.println();
 
