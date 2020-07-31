@@ -3,7 +3,9 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:/Users/Anderson/.platformio/packages/framework-arduino-avr/cores/arduino",
+                "C:/Users/Anderson/.platformio/packages/toolchain-atmelavr/avr/include"
             ],
             "defines": [
                 "_DEBUG",
