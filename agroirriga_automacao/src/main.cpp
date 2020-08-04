@@ -1,12 +1,12 @@
 //=======BIBLIOTECAS=======================================
 #include <Arduino.h>
-#include <dht.h> //biblioteca sensor de temperatura e umidade do ar
+#include <DHT.h> //biblioteca sensor de temperatura e umidade do ar
 #include <SPI.h>
 #include <Ethernet.h> 
 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 //byte servidor[] = {10, 0, 10, 216};
-char servidor[] = "https://agroirriga.gaviaopeixoto.sp.gov.br";
+char servidor[] = "agroirriga.gaviaopeixoto.sp.gov.br";
 #define portaHTTP 80
 
 EthernetClient clienteArduino;
@@ -19,19 +19,19 @@ EthernetClient clienteArduino;
 #define sTempUmidade 6
 #define sVazaoAgua 8
 
-float sensor1 = 1;
-float sensor2 = 3;
-float sensor3 = 5;
+#define DHTTYPE DHT11   // DHT 11 
+
+DHT dht(sTempUmidade, DHTTYPE);
+
 //=========================================================
 
 // ---- DECLARAÇÃO DO OBJETO -----
-dht my_dht;//objeto para o sensor de temperatura e umidade do ar
 
 void setup() {
 //========SETUP CONEXÃO COM SERVIDOR ======================
   Serial.begin(9600);
   Ethernet.begin(mac);
-  if(Ethernet.begin(mac) == 0{
+  if(Ethernet.begin(mac) == 0){
     Serial.println("Falha ao conectar a rede");   
     Ethernet.begin(mac); 
   }
@@ -41,6 +41,7 @@ void setup() {
 
 
 // ----------- CONFIGURAÇÃO DOS SENSORES ------------------
+  dht.begin();
   pinMode(uSolo, INPUT);
   pinMode(sChuva, INPUT);    
   pinMode(sVazaoAgua, INPUT);
@@ -52,15 +53,13 @@ void loop() {
   //=======================================================
   // ÁREA RESERVADA PARA A LEITURA DOS SENSORES
 
-  my_dht.read11(sensorTempUmidade);
   //------- DECLARANDO AS VARIAVEIS -----------------------
   int vazaoAgua = analogRead(sVazaoAgua);
   int umidadeSolo = analogRead(uSolo);
   int chuva = analogRead(sChuva);
-  int temperatura = my_dht.temperature;
-  int umidadeAr = my_dht.humidity;
+  int temperatura = dht.readTemperature();
+  int umidadeAr = dht.readHumidity();
 
-      sensor1++;  sensor2++; sensor3++;
   //=======================================================
 
    //----- IMPRIMINDO VALORES SENSORES -----
@@ -88,15 +87,20 @@ void loop() {
     Serial.println("  ");
     */
 
-    Serial.println("Conectando ao servidor e enviando os dados: ");
-    Serial.print("Sensor1: ");
-    Serial.println(sensor1);
-    Serial.print("Sensor2: ");
-    Serial.println(sensor2);
-    Serial.print("Sensor3: ");
-    Serial.println(sensor3);
+if(clienteArduino.available()){
+  char dadosRetornados = clienteArduino.read();
+  Serial.print(dadosRetornados);
+}
+
+if(!clienteArduino.connected()){
+  clienteArduino.stop();
+}
     
     //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
+
+  char comando = Serial.read();
+
+    Serial.println("Conectando ao servidor ...");
     if(clienteArduino.connect(servidor, portaHTTP)){
 
       // http://10.0.10.216/projetos/Web_Irrigacao/dadosArduino.php
@@ -104,8 +108,8 @@ void loop() {
       //clienteArduino.println("GET /projetos/Web_Irrigacao/dadosArduino.php HTTP/1.0");
       
       //PARAMETROS DO CÓDIGO PHP
-      clienteArduino.print("GET /projetos/Web_Irrigacao/Arduino/salvar.php");
-      clienteArduino.print("&sensorUmidadeSolo=");
+      clienteArduino.print("GET /Arduino/salvar.php");
+      clienteArduino.print("?sensorUmidadeSolo=");
       clienteArduino.print(umidadeSolo);
       clienteArduino.print("&sensorChuva=");
       clienteArduino.print(chuva);
@@ -115,9 +119,9 @@ void loop() {
       clienteArduino.print(umidadeAr);
       clienteArduino.print("&fluxoVazaoDeAgua=");
       clienteArduino.print(vazaoAgua);
-      clienteArduino.println("HTTP/1.0");
-      
-      clienteArduino.println("Host: https://agroirriga.gaviaopeixoto.sp.gov.br/");
+      clienteArduino.println(" HTTP/1.0");
+
+      clienteArduino.println("Host: agroirriga.gaviaopeixoto.sp.gov.br");
       clienteArduino.println("Connection: close");
       clienteArduino.println();
 
@@ -128,7 +132,7 @@ void loop() {
 
       clienteArduino.stop();
     } 
- // } final if
   
-  delay(5000);
+  
+  delay(300000);
 }
