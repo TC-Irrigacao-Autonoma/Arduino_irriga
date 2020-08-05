@@ -2,66 +2,59 @@
 #include <Arduino.h>
 #include <DHT.h> //biblioteca sensor de temperatura e umidade do ar
 #include <SPI.h>
-#include <Ethernet.h> 
-
-byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+#include <Ethernet.h>
+//========================================================= 
+byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; //endereço mac da ethernet shield
 //byte servidor[] = {10, 0, 10, 216};
-char servidor[] = "agroirriga.gaviaopeixoto.sp.gov.br";
+char servidor[] = "agroirriga.gaviaopeixoto.sp.gov.br"; //servidor para comunicação com arduino
 #define portaHTTP 80
+EthernetClient clienteArduino; //criando um objeto do tipo EthernetClient
 
-EthernetClient clienteArduino;
-
-//=========================================================
-// ÁREA RESERVADA PARA A DECLARAÇÃO DOS SENSORES
-#define uSolo A0
-#define sChuva A1
-#define solenoide 7
-#define sTempUmidade 6
-#define sVazaoAgua 8
-
+//======== DECLARANDO O NOME DOS PINOS ==========================================
+#define uSolo A0 //sensor de umidade do solo
+#define sChuva A1 //sensor de chuva
+#define solenoide 7 //rele para a valvula solenoide
+#define sTempUmidade 6 //sensor temperatura e umidade do ar (DHT11)
+#define sVazaoAgua 8 //sensor vazao e fluxo de água
 #define DHTTYPE DHT11   // DHT 11 
-
 DHT dht(sTempUmidade, DHTTYPE);
-
 //=========================================================
 
-// ---- DECLARAÇÃO DO OBJETO -----
+int contTempo = 0; //contador de tempo 1seg para cada 1000 milisegundos
 
 void setup() {
-//========SETUP CONEXÃO COM SERVIDOR ======================
   Serial.begin(9600);
-  Ethernet.begin(mac);
-  if(Ethernet.begin(mac) == 0){
-    Serial.println("Falha ao conectar a rede");   
-    Ethernet.begin(mac); 
+//======== SETUP CONEXÃO COM SERVIDOR ======================
+  Ethernet.begin(mac);                          //inicia a conexão do Arduino (shield) com a rede local 
+  if(Ethernet.begin(mac) == 0){                 //Se o endereço mac não for encontrado pela rede local 
+    Serial.println("Falha ao conectar a rede"); //é impresso na porta serial 'falha ao conectar',     
+    Ethernet.begin(mac);                        //e tenta novamente fazer a conexão na rede local
   }
   Serial.print("Conectado a rede, no ip: ");
   Serial.println(Ethernet.localIP());
 //=========================================================
 
-
 // ----------- CONFIGURAÇÃO DOS SENSORES ------------------
-  dht.begin();
-  pinMode(uSolo, INPUT);
-  pinMode(sChuva, INPUT);    
-  pinMode(sVazaoAgua, INPUT);
-  pinMode(solenoide, OUTPUT);
+  dht.begin();                //inicia captação de temperatura e umidade do ar
+  pinMode(uSolo, INPUT);      //declara umidade do solo como sinal de entrada
+  pinMode(sChuva, INPUT);     //  #     sensor de chuva como sinal de entrada
+  pinMode(sVazaoAgua, INPUT); //  #     sensor de vazao de água como sinal de entrada
+  pinMode(solenoide, OUTPUT); //  #     a valvula solenoide a partir do rele como sinal de saída
 // --------------------------------------------------------
 }
 
 void loop() {
-  //=======================================================
-  // ÁREA RESERVADA PARA A LEITURA DOS SENSORES
-
   //------- DECLARANDO AS VARIAVEIS -----------------------
-  int vazaoAgua = analogRead(sVazaoAgua);
-  int umidadeSolo = analogRead(uSolo);
-  int chuva = analogRead(sChuva);
-  int temperatura = dht.readTemperature();
-  int umidadeAr = dht.readHumidity();
-
-  //=======================================================
-
+  int vazaoAgua = analogRead(sVazaoAgua); //atribui valor da vazao de agua a variavel 'vazaoAgua'
+  int umidadeSolo = analogRead(uSolo);    // #      #      umidade solo    #   #      'umidadeSolo'
+  int chuva = analogRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
+  int temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
+  int umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
+  //-------------------------------------------------------
+    
+if(contTempo == 300){ //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados 
+   enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); //método que envia os dados para o arquivo salvar.php
+} 
    //----- IMPRIMINDO VALORES SENSORES -----
   /*
    Serial.print("Sensor Chuva:");
@@ -87,27 +80,35 @@ void loop() {
     Serial.println("  ");
     */
 
-if(clienteArduino.available()){
-  char dadosRetornados = clienteArduino.read();
-  Serial.print(dadosRetornados);
-}
-
-if(!clienteArduino.connected()){
-  clienteArduino.stop();
-}
-    
-    //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
-
-  char comando = Serial.read();
-
-    Serial.println("Conectando ao servidor ...");
-    if(clienteArduino.connect(servidor, portaHTTP)){
-
-      // http://10.0.10.216/projetos/Web_Irrigacao/dadosArduino.php
+      Serial.print("Umidade de solo = ");
+      Serial.print(umidadeSolo);
+      Serial.print(" Sensor de chuva = ");
+      Serial.print(chuva);
+      Serial.print(" Temperatura = ");
+      Serial.print(temperatura);
+      Serial.print(" Umidade do ar = ");
+      Serial.print(umidadeAr);
+      Serial.print(" Vazão de água = ");
+      Serial.print(vazaoAgua); 
+      Serial.println();
   
-      //clienteArduino.println("GET /projetos/Web_Irrigacao/dadosArduino.php HTTP/1.0");
-      
-      //PARAMETROS DO CÓDIGO PHP
+  contTempo++;
+  delay(1000); //atraso de 1seg
+}
+
+void enviandoDados(int vazaoAgua, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
+   //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
+  if(clienteArduino.available()){
+    char dadosRetornados = clienteArduino.read();
+    Serial.print(dadosRetornados);}
+  if(!clienteArduino.connected()){
+    clienteArduino.stop();}
+  char comando = Serial.read();
+    Serial.println("Conectando ao servidor e enviando dados ...");
+
+    if(clienteArduino.connect(servidor, portaHTTP)){ //se conectar ao servidor envia os dados para arquivo salvar.php
+      //--------- PARAMETROS DO CÓDIGO PHP -------------------------------------------
+      //Passa os valores das variaveis para a pagina salvar.php pelo método GET
       clienteArduino.print("GET /Arduino/salvar.php");
       clienteArduino.print("?sensorUmidadeSolo=");
       clienteArduino.print(umidadeSolo);
@@ -120,19 +121,13 @@ if(!clienteArduino.connected()){
       clienteArduino.print("&fluxoVazaoDeAgua=");
       clienteArduino.print(vazaoAgua);
       clienteArduino.println(" HTTP/1.0");
-
-      clienteArduino.println("Host: agroirriga.gaviaopeixoto.sp.gov.br");
-      clienteArduino.println("Connection: close");
-      clienteArduino.println();
-
-      clienteArduino.stop();
-      
+      clienteArduino.println("Host: agroirriga.gaviaopeixoto.sp.gov.br"); //faz uma requisição conectando com o servidor 
+      clienteArduino.println("Connection: close");                     
+      clienteArduino.println();                                           
+      clienteArduino.stop();                                 // fecha a conexão para depois fazer a requisição novamente                    
     } else {
-      Serial.println("Falha na conexao com o servidor");
-
-      clienteArduino.stop();
-    } 
-  
-  
-  delay(300000);
+      Serial.println("Falha na conexao com o servidor"); //se não conectar ao servidor
+      clienteArduino.stop();                             //para com a requisição do clienteArduino
+    }
+    contTempo = 0; //quando método é executado zera o conTempo para contar mais 5 min até próxima chamada
 }
