@@ -51,17 +51,18 @@ void loop() {
   int temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
   int umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
   //-------------------------------------------------------
-    
-if(contTempo == 5){ //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados 
-   enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); //método que envia os dados para o arquivo salvar.php
+
+ //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados
+if(contTempo == 5){                                
+   enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); 
 }
 
-  if((umidadeSolo > 550) && (chuva > 500) ){ //irrigar quando umidade do solo for baixa e não estiver chovendo
-    digitalWrite(solenoide, LOW); // aciona e abre a  valvula solenoide
+  if((umidadeSolo > 550) && (chuva > 500) ){ //irriga quando umidade do solo é baixa e não está chovendo
+    digitalWrite(solenoide, LOW);            //aciona e abre a valvula solenoide
     Serial.print("Solenoide ABERTA");
    }
    else{
-    digitalWrite(solenoide, HIGH); //fecha a valvula solenoide
+    digitalWrite(solenoide, HIGH);          //fecha a valvula solenoide
     Serial.print("Solenoide FECHADA");
    }    
   
@@ -97,12 +98,12 @@ void enviandoDados(int vazaoAgua, int umidadeSolo, int chuva, int temperatura, i
       clienteArduino.println("Host: agroirriga.gaviaopeixoto.sp.gov.br"); //faz uma requisição conectando com o servidor 
       clienteArduino.println("Connection: close");                     
       clienteArduino.println();                                           
-      clienteArduino.stop();                                 // fecha a conexão para depois fazer a requisição novamente                    
+      clienteArduino.stop();                              // fecha a conexão para depois fazer a requisição novamente                    
     } else {
       Serial.println("Falha na conexao com o servidor"); //se não conectar ao servidor
       clienteArduino.stop();                             //para com a requisição do clienteArduino
     }
-    contTempo = 0; //quando método é executado zera o conTempo para contar mais 5 min até próxima chamada
+    contTempo = 0;                                       //quando método é executado zera o conTempo para contar mais 5 min até próxima chamada
 }
 
  //----- IMPRIMINDO VALORES SENSORES -----
