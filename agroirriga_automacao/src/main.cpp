@@ -52,48 +52,21 @@ void loop() {
   int umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
   //-------------------------------------------------------
     
-if(contTempo == 300){ //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados 
+if(contTempo == 5){ //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados 
    enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); //método que envia os dados para o arquivo salvar.php
-} 
-   //----- IMPRIMINDO VALORES SENSORES -----
-  /*
-   Serial.print("Sensor Chuva:");
-   Serial.print(sensorChuvaA);
-   Serial.print("   Umidade do solo:");
-   Serial.print(umidadeSoloA);
-   Serial.print("   Atuador:");
+}
 
-   if(umidadeSoloA > 700){
-    digitalWrite(solenoide, LOW);
+  if((umidadeSolo > 550) && (chuva > 500) ){ //irrigar quando umidade do solo for baixa e não estiver chovendo
+    digitalWrite(solenoide, LOW); // aciona e abre a  valvula solenoide
     Serial.print("Solenoide ABERTA");
    }
    else{
-    digitalWrite(solenoide, HIGH);
+    digitalWrite(solenoide, HIGH); //fecha a valvula solenoide
     Serial.print("Solenoide FECHADA");
-   }
-    Serial.print("   Temperatura:");
-    Serial.print(temperatura);
-    Serial.print("ºC ");
-    Serial.print("   Umidade do Ar:");
-    Serial.print(umidadeAr);
-    Serial.print("%");
-    Serial.println("  ");
-    */
-
-      Serial.print("Umidade de solo = ");
-      Serial.print(umidadeSolo);
-      Serial.print(" Sensor de chuva = ");
-      Serial.print(chuva);
-      Serial.print(" Temperatura = ");
-      Serial.print(temperatura);
-      Serial.print(" Umidade do ar = ");
-      Serial.print(umidadeAr);
-      Serial.print(" Vazão de água = ");
-      Serial.print(vazaoAgua); 
-      Serial.println();
+   }    
   
   contTempo++;
-  delay(1000); //atraso de 1seg
+  delay(60000); //atraso de 1min
 }
 
 void enviandoDados(int vazaoAgua, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
@@ -131,3 +104,20 @@ void enviandoDados(int vazaoAgua, int umidadeSolo, int chuva, int temperatura, i
     }
     contTempo = 0; //quando método é executado zera o conTempo para contar mais 5 min até próxima chamada
 }
+
+ //----- IMPRIMINDO VALORES SENSORES -----
+  /*
+   Serial.print("Sensor Chuva:");
+   Serial.print(sensorChuvaA);
+   Serial.print("   Umidade do solo:");
+   Serial.print(umidadeSoloA);
+   Serial.print("   Atuador:");
+
+    Serial.print("   Temperatura:");
+    Serial.print(temperatura);
+    Serial.print("ºC ");
+    Serial.print("   Umidade do Ar:");
+    Serial.print(umidadeAr);
+    Serial.print("%");
+    Serial.println("  ");
+    */
