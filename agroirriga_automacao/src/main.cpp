@@ -57,7 +57,7 @@ if(contTempo == 5){
    enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); 
 }
 
-  if((umidadeSolo > 550) && (chuva > 500) ){ //irriga quando umidade do solo é baixa e não está chovendo
+  if((umidadeSolo > ) && (chuva > 500) ){ //irriga quando umidade do solo é baixa e não está chovendo
     digitalWrite(solenoide, LOW);            //aciona e abre a valvula solenoide
     Serial.print("Solenoide ABERTA");
    }
