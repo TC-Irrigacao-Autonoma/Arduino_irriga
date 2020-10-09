@@ -23,7 +23,7 @@ DHT dht(sTempUmidade, DHTTYPE);
 int contTempo = 0; //contador de tempo 1seg para cada 1000 milisegundos
 
 int umidadeSolo_ideal = 512;
-int diferencaUmidadeSolo_ideal = umidadeSolo_ideal - 10;
+int min_umidadeSolo_ideal = umidadeSolo_ideal - 10;
 
 void setup() {
   Serial.begin(9600);
@@ -41,7 +41,6 @@ void setup() {
   dht.begin();                //inicia captação de temperatura e umidade do ar
   pinMode(uSolo, INPUT);      //declara umidade do solo como sinal de entrada
   pinMode(sChuva, INPUT);     //  #     sensor de chuva como sinal de entrada
-  pinMode(sVazaoAgua, INPUT); //  #     sensor de vazao de água como sinal de entrada
   pinMode(solenoide, OUTPUT); //  #     a valvula solenoide a partir do rele como sinal de saída
 // --------------------------------------------------------
 }
@@ -49,31 +48,32 @@ void setup() {
 //----------------------------------------------------------------------------------------------------------------------------------------------
 void loop() {
   //------- DECLARANDO AS VARIAVEIS -----------------------
-  int vazaoAgua = analogRead(sVazaoAgua); //atribui valor da vazao de agua a variavel 'vazaoAgua'
   int umidadeSolo = analogRead(uSolo);    // #      #      umidade solo    #   #      'umidadeSolo'
   int chuva = analogRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
   int temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
   int umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
+  int valvulaSolenoide = 0;
   //-------------------------------------------------------
 
-if((umidadeSolo > diferencaUmidadeSolo_ideal) && (chuva > 500)){ // se umidadeSolo < diferencaUmidadeSolo_ideal(%)
+if((umidadeSolo > min_umidadeSolo_ideal) && (chuva > 500)){ // se umidadeSolo < min_umidadeSolo_ideal(%)
   while((umidadeSolo > umidadeSolo_ideal) && (chuva > 500)){ // enquanto umidadeSolo < umidadeSolo_ideal(%)
     digitalWrite(solenoide, LOW); //VALVULA ABERTA
+    valvulaSolenoide = 1; //envia 1 para o web indicando a valvula aberta 
 
-    vazaoAgua = analogRead(sVazaoAgua); //atribui valor da vazao de agua a variavel 'vazaoAgua'
     umidadeSolo = analogRead(uSolo);    // #      #      umidade solo    #   #      'umidadeSolo'
-    chuva = analogRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
+    chuva = digitalRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
     temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
     umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
 
     if(contTempo == 5){                                
-      enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); 
+      enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
       contTempo = 0;
     }
     contTempo++;
     delay(60000); //atraso de 1min
   }
-  digitalWrite(solenoide, HIGH); //VALVULA FECHADA  
+  digitalWrite(solenoide, HIGH); //VALVULA FECHADA
+  valvulaSolenoide = 0; //envia 0 para o web indicando valvula fechada  
 }
 
 /*
@@ -89,7 +89,7 @@ else{
 
 //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados
 if(contTempo == 5){                                
-   enviandoDados(vazaoAgua, umidadeSolo, chuva, temperatura, umidadeAr); 
+   enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
    contTempo = 0;
 }
   contTempo++;
@@ -104,7 +104,8 @@ if(contTempo == 5){
 
 
 //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
-void enviandoDados(int vazaoAgua, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
+void enviandoDados(int valvulaSolenoide, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
+  umidadeSolo = ((1024 - umidadeSolo) * 100)/1024)
   if(clienteArduino.available()){
     char dadosRetornados = clienteArduino.read();
     Serial.print(dadosRetornados);}
@@ -125,8 +126,8 @@ void enviandoDados(int vazaoAgua, int umidadeSolo, int chuva, int temperatura, i
       clienteArduino.print(temperatura);
       clienteArduino.print("&sensorUmidadeAr=");
       clienteArduino.print(umidadeAr);
-      clienteArduino.print("&fluxoVazaoDeAgua=");
-      clienteArduino.print(vazaoAgua);
+      clienteArduino.print("&valvulaSolenoide=");
+      clienteArduino.print(valvulaSolenoide);
       clienteArduino.println(" HTTP/1.0");
       clienteArduino.println("Host: agroirriga.gaviaopeixoto.sp.gov.br"); //faz uma requisição conectando com o servidor 
       clienteArduino.println("Connection: close");                     
