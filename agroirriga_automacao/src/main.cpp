@@ -65,12 +65,12 @@ if((umidadeSolo > min_umidadeSolo_ideal) && (chuva > 500)){ // se umidadeSolo < 
     temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
     umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
 
-    if(contTempo == 5){                                
+    if(contTempo == 60){                                
       enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
       contTempo = 0;
     }
     contTempo++;
-    delay(60000); //atraso de 1min
+    delay(1000); //atraso de 1min
   }
   digitalWrite(solenoide, HIGH); //VALVULA FECHADA
   valvulaSolenoide = 0; //envia 0 para o web indicando valvula fechada  
@@ -88,12 +88,22 @@ else{
 */
 
 //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados
-if(contTempo == 5){                                
+if(contTempo == 60){                                
    enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
    contTempo = 0;
 }
+
+Serial.print("Chuva: ");
+Serial.print(chuva);
+Serial.print("  Temperatura: ");
+Serial.print(temperatura);
+Serial.print("  Umidade do ar: ");
+Serial.print(umidadeAr);
+Serial.print("  Umidade do solo: ");
+Serial.print(umidadeSolo);
+Serial.println("");
   contTempo++;
-  delay(60000); //atraso de 1min
+  delay(1000); //atraso de 1min
 }
 
 //------------------------------------FIM DO LOOP-----------------------------------------------------------------------------------------------
@@ -105,7 +115,7 @@ if(contTempo == 5){
 
 //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
 void enviandoDados(int valvulaSolenoide, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
-  umidadeSolo = ((1024 - umidadeSolo) * 100)/1024)
+  umidadeSolo = (((1024 - umidadeSolo) * 100)/1024);
   if(clienteArduino.available()){
     char dadosRetornados = clienteArduino.read();
     Serial.print(dadosRetornados);}
