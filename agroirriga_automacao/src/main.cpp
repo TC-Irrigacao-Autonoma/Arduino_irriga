@@ -12,18 +12,17 @@ EthernetClient clienteArduino; //criando um objeto do tipo EthernetClient
 
 //======== DECLARANDO O NOME DOS PINOS ==========================================
 #define uSolo A0 //sensor de umidade do solo
-#define sChuva A1 //sensor de chuva
+#define sChuva 5 //sensor de chuva
 #define solenoide 7 //rele para a valvula solenoide
 #define sTempUmidade 6 //sensor temperatura e umidade do ar (DHT11)
-#define sVazaoAgua 8 //sensor vazao e fluxo de água
 #define DHTTYPE DHT11   // DHT 11 
 DHT dht(sTempUmidade, DHTTYPE);
 //=========================================================
 
 int contTempo = 0; //contador de tempo 1seg para cada 1000 milisegundos
 
-int umidadeSolo_ideal = 512;
-int min_umidadeSolo_ideal = umidadeSolo_ideal - 10;
+int umidadeSolo_ideal = 60;
+//int min_umidadeSolo_ideal = umidadeSolo_ideal - 10;
 
 void setup() {
   Serial.begin(9600);
@@ -48,27 +47,34 @@ void setup() {
 //----------------------------------------------------------------------------------------------------------------------------------------------
 void loop() {
   //------- DECLARANDO AS VARIAVEIS -----------------------
-  int umidadeSolo = analogRead(uSolo);    // #      #      umidade solo    #   #      'umidadeSolo'
-  int chuva = analogRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
-  int temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
-  int umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
+  int umidadeSolo = ((1024-analogRead(uSolo))*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
+  int chuva = digitalRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
+  int temperatura = dht.readTemperature(); // #      #       temperatura    #   #      'temperatura'
+  int umidadeAr = dht.readHumidity();      // #      #     umidade do ar    #   #      'umidadeAr'
   int valvulaSolenoide = 0;
   //-------------------------------------------------------
 
-if((umidadeSolo > min_umidadeSolo_ideal) && (chuva > 500)){ // se umidadeSolo < min_umidadeSolo_ideal(%)
-  while((umidadeSolo > umidadeSolo_ideal) && (chuva > 500)){ // enquanto umidadeSolo < umidadeSolo_ideal(%)
+if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 1)){ // se umidadeSolo < min_umidadeSolo_ideal(%)
+  while((umidadeSolo < umidadeSolo_ideal) && (chuva != 1)){ // enquanto umidadeSolo < umidadeSolo_ideal(%)
     digitalWrite(solenoide, LOW); //VALVULA ABERTA
     valvulaSolenoide = 1; //envia 1 para o web indicando a valvula aberta 
 
-    umidadeSolo = analogRead(uSolo);    // #      #      umidade solo    #   #      'umidadeSolo'
-    chuva = digitalRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
-    temperatura = dht.readTemperature();// #      #       temperatura    #   #      'temperatura'
-    umidadeAr = dht.readHumidity();     // #      #     umidade do ar    #   #      'umidadeAr'
+    umidadeSolo = ((1024-analogRead(uSolo))*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
+    chuva = digitalRead(sChuva);                          // #      #   sensor de chuva    #   #      'chuva'
+    temperatura = dht.readTemperature();                  // #      #       temperatura    #   #      'temperatura'
+    umidadeAr = dht.readHumidity();                       // #      #     umidade do ar    #   #      'umidadeAr'
 
     if(contTempo == 60){                                
       enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
       contTempo = 0;
     }
+    Serial.print("Chuva: ");
+    Serial.print(chuva);
+    Serial.print("  Umidade do Solo:  ");
+    Serial.print(umidadeSolo);
+    Serial.println("  Valvula Aberta");
+   
+
     contTempo++;
     delay(1000); //atraso de 1min
   }
@@ -92,16 +98,13 @@ if(contTempo == 60){
    enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
    contTempo = 0;
 }
+    Serial.print("Chuva: ");
+    Serial.print(chuva);
+    Serial.print("  Umidade do Solo:  ");
+    Serial.print(umidadeSolo);
+    Serial.println(" Valvula Aberta");
 
-Serial.print("Chuva: ");
-Serial.print(chuva);
-Serial.print("  Temperatura: ");
-Serial.print(temperatura);
-Serial.print("  Umidade do ar: ");
-Serial.print(umidadeAr);
-Serial.print("  Umidade do solo: ");
-Serial.print(umidadeSolo);
-Serial.println("");
+
   contTempo++;
   delay(1000); //atraso de 1min
 }
