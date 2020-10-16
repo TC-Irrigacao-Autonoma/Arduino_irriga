@@ -47,19 +47,22 @@ void setup() {
 //----------------------------------------------------------------------------------------------------------------------------------------------
 void loop() {
   //------- DECLARANDO AS VARIAVEIS -----------------------
-  int umidadeSolo = ((1024-analogRead(uSolo))*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
+  double sensorSolo = analogRead(uSolo);
+  double umidadeSolo = ((1024-sensorSolo)*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
   int chuva = digitalRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
   int temperatura = dht.readTemperature(); // #      #       temperatura    #   #      'temperatura'
   int umidadeAr = dht.readHumidity();      // #      #     umidade do ar    #   #      'umidadeAr'
   int valvulaSolenoide = 0;
   //-------------------------------------------------------
+  
 
-if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 1)){ // se umidadeSolo < min_umidadeSolo_ideal(%)
-  while((umidadeSolo < umidadeSolo_ideal) && (chuva != 1)){ // enquanto umidadeSolo < umidadeSolo_ideal(%)
+if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 0)){ // se umidadeSolo < min_umidadeSolo_ideal(%)
+  while((umidadeSolo < umidadeSolo_ideal) && (chuva != 0)){ // enquanto umidadeSolo < umidadeSolo_ideal(%)
     digitalWrite(solenoide, LOW); //VALVULA ABERTA
     valvulaSolenoide = 1; //envia 1 para o web indicando a valvula aberta 
 
-    umidadeSolo = ((1024-analogRead(uSolo))*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
+    sensorSolo = analogRead(uSolo);
+    umidadeSolo = ((1024-sensorSolo)*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
     chuva = digitalRead(sChuva);                          // #      #   sensor de chuva    #   #      'chuva'
     temperatura = dht.readTemperature();                  // #      #       temperatura    #   #      'temperatura'
     umidadeAr = dht.readHumidity();                       // #      #     umidade do ar    #   #      'umidadeAr'
@@ -68,7 +71,12 @@ if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 1)){ // se umidadeSolo < mi
       enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
       contTempo = 0;
     }
-    Serial.print("Chuva: ");
+    
+    Serial.print("Temperatura: ");
+    Serial.print(temperatura);
+    Serial.print("  Umidade do Ar: ");
+    Serial.print(umidadeAr);
+    Serial.print("  Chuva: ");
     Serial.print(chuva);
     Serial.print("  Umidade do Solo:  ");
     Serial.print(umidadeSolo);
@@ -98,11 +106,18 @@ if(contTempo == 60){
    enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
    contTempo = 0;
 }
-    Serial.print("Chuva: ");
+
+    Serial.print("Temperatura: ");
+    Serial.print(temperatura);
+    Serial.print("  Umidade do Ar: ");
+    Serial.print(umidadeAr);
+    Serial.print("  Chuva: ");
     Serial.print(chuva);
     Serial.print("  Umidade do Solo:  ");
     Serial.print(umidadeSolo);
-    Serial.println(" Valvula Aberta");
+    Serial.println("  Valvula Fechada");
+    
+    
 
 
   contTempo++;
@@ -117,8 +132,7 @@ if(contTempo == 60){
 
 
 //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
-void enviandoDados(int valvulaSolenoide, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
-  umidadeSolo = (((1024 - umidadeSolo) * 100)/1024);
+void enviandoDados(int valvulaSolenoide, double umidadeSolo, int chuva, int temperatura, int umidadeAr){
   if(clienteArduino.available()){
     char dadosRetornados = clienteArduino.read();
     Serial.print(dadosRetornados);}
@@ -131,16 +145,16 @@ void enviandoDados(int valvulaSolenoide, int umidadeSolo, int chuva, int tempera
       //--------- PARAMETROS DO CÓDIGO PHP -------------------------------------------
       //Passa os valores das variaveis para a pagina salvar.php pelo método GET
       clienteArduino.print("GET /Arduino/salvar.php");
-      clienteArduino.print("?sensorUmidadeSolo=");
-      clienteArduino.print(umidadeSolo);
-      clienteArduino.print("&sensorChuva=");
-      clienteArduino.print(chuva);
-      clienteArduino.print("&sensorTemperatura=");
-      clienteArduino.print(temperatura);
-      clienteArduino.print("&sensorUmidadeAr=");
-      clienteArduino.print(umidadeAr);
-      clienteArduino.print("&valvulaSolenoide=");
+      clienteArduino.print("?valvulaSolenoide=");
       clienteArduino.print(valvulaSolenoide);
+      clienteArduino.print("&umidadeSolo=");
+      clienteArduino.print(umidadeSolo);
+      clienteArduino.print("&chuva=");
+      clienteArduino.print(chuva);
+      clienteArduino.print("&temperatura=");
+      clienteArduino.print(temperatura);
+      clienteArduino.print("&umidadeAr=");
+      clienteArduino.print(umidadeAr);
       clienteArduino.println(" HTTP/1.0");
       clienteArduino.println("Host: agroirriga.gaviaopeixoto.sp.gov.br"); //faz uma requisição conectando com o servidor 
       clienteArduino.println("Connection: close");                     
