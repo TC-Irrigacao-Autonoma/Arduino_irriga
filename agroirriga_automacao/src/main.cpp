@@ -67,7 +67,7 @@ if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 0)){ // se umidadeSolo < mi
     temperatura = dht.readTemperature();                  // #      #       temperatura    #   #      'temperatura'
     umidadeAr = dht.readHumidity();                       // #      #     umidade do ar    #   #      'umidadeAr'
 
-    if(contTempo == 60){                                
+    if(contTempo == 5){                                
       enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
       contTempo = 0;
     }
@@ -84,7 +84,7 @@ if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 0)){ // se umidadeSolo < mi
    
 
     contTempo++;
-    delay(1000); //atraso de 1min
+    delay(60000); //atraso de 1min
   }
   digitalWrite(solenoide, HIGH); //VALVULA FECHADA
   valvulaSolenoide = 0; //envia 0 para o web indicando valvula fechada  
@@ -102,7 +102,7 @@ else{
 */
 
 //se o contador chegar a 300seg (5min) faz a chamada do método enviandoDados
-if(contTempo == 60){                                
+if(contTempo == 5){                                
    enviandoDados(valvulaSolenoide, umidadeSolo, chuva, temperatura, umidadeAr); 
    contTempo = 0;
 }
@@ -121,7 +121,7 @@ if(contTempo == 60){
 
 
   contTempo++;
-  delay(1000); //atraso de 1min
+  delay(60000); //atraso de 1min
 }
 
 //------------------------------------FIM DO LOOP-----------------------------------------------------------------------------------------------
