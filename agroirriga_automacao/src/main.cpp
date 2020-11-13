@@ -6,7 +6,7 @@
 //========================================================= 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; //endereço mac da ethernet shield
 //byte servidor[] = {10, 0, 10, 216};
-char servidor[] = "agroirriga.gaviaopeixoto.sp.gov.br"; //servidor para comunicação com arduino
+char servidor[] = "agroirriga.cartolex.life"; //servidor para comunicação com arduino
 #define portaHTTP 80
 EthernetClient clienteArduino; //criando um objeto do tipo EthernetClient
 
@@ -48,7 +48,7 @@ void setup() {
 void loop() {
   //------- DECLARANDO AS VARIAVEIS -----------------------
   double sensorSolo = analogRead(uSolo);
-  double umidadeSolo = ((1024-sensorSolo)*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
+  int umidadeSolo = ((1024-sensorSolo)*100)/1024;    // #      #      umidade solo    #   #      'umidadeSolo'
   int chuva = digitalRead(sChuva);         // #      #   sensor de chuva    #   #      'chuva'
   int temperatura = dht.readTemperature(); // #      #       temperatura    #   #      'temperatura'
   int umidadeAr = dht.readHumidity();      // #      #     umidade do ar    #   #      'umidadeAr'
@@ -84,7 +84,7 @@ if((umidadeSolo < umidadeSolo_ideal-10) && (chuva != 0)){ // se umidadeSolo < mi
    
 
     contTempo++;
-    delay(60000); //atraso de 1min
+    delay(1000); //atraso de 1min
   }
   digitalWrite(solenoide, HIGH); //VALVULA FECHADA
   valvulaSolenoide = 0; //envia 0 para o web indicando valvula fechada  
@@ -121,7 +121,7 @@ if(contTempo == 5){
 
 
   contTempo++;
-  delay(60000); //atraso de 1min
+  delay(1000); //atraso de 1min
 }
 
 //------------------------------------FIM DO LOOP-----------------------------------------------------------------------------------------------
@@ -132,7 +132,44 @@ if(contTempo == 5){
 
 
 //========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
-void enviandoDados(int valvulaSolenoide, double umidadeSolo, int chuva, int temperatura, int umidadeAr){
+void enviandoDados(int valvulaSolenoide, int umidadeSolo, int chuva, int temperatura, int umidadeAr){
+  if(clienteArduino.available()){
+    char dadosRetornados = clienteArduino.read();
+    Serial.print(dadosRetornados);}
+  if(!clienteArduino.connected()){
+    clienteArduino.stop();}
+  char comando = Serial.read();
+    Serial.println("Conectando ao servidor e enviando dados ...");
+
+    if(clienteArduino.connect(servidor, portaHTTP)){ //se conectar ao servidor envia os dados para arquivo salvar.php
+      //--------- PARAMETROS DO CÓDIGO PHP -------------------------------------------
+      //Passa os valores das variaveis para a pagina salvar.php pelo método GET
+      clienteArduino.print("GET /agroirrigaftp/Arduino/salvar.php");
+      clienteArduino.print("?valvulaSolenoide=");
+      clienteArduino.print(valvulaSolenoide);
+      clienteArduino.print("&umidadeSolo=");
+      clienteArduino.print(umidadeSolo);
+      clienteArduino.print("&chuva=");
+      clienteArduino.print(chuva);
+      clienteArduino.print("&temperatura=");
+      clienteArduino.print(temperatura);
+      clienteArduino.print("&umidadeAr=");
+      clienteArduino.print(umidadeAr);
+      clienteArduino.println(" HTTP/1.0");
+      clienteArduino.println("Host: agroirriga.cartolex.life"); //faz uma requisição conectando com o servidor 
+      clienteArduino.println("Connection: close");                     
+      clienteArduino.println();                                           
+      clienteArduino.stop();                              // fecha a conexão para depois fazer a requisição novamente                    
+    } else {
+      Serial.println("Falha na conexao com o servidor"); //se não conectar ao servidor
+      clienteArduino.stop();                             //para com a requisição do clienteArduino
+    }
+    contTempo = 0;                                       //quando método é executado zera o conTempo para contar mais 5 min até próxima chamada
+}
+
+
+//========== ENVIANDO DADOS PARA ARQUIVO WEB PHP ===================
+void enviandoDadosTempoReal(int valvulaSolenoide, double umidadeSolo, int chuva, int temperatura, int umidadeAr){
   if(clienteArduino.available()){
     char dadosRetornados = clienteArduino.read();
     Serial.print(dadosRetornados);}
